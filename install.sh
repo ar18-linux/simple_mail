@@ -238,7 +238,7 @@ for key in "${!email_paswords[@]}"; do
       echo "f${key}f"
       if [ "${AuthUser}" = "${key}" ]; then
         echo replace
-        content="${content/{{PASSWORD}}/${email_paswords[${key}]}}"
+        content="${content/@@PASSWORD@@/${email_paswords[${key}]}}"
         echo "${content}" > "${filename}"
       fi
     fi

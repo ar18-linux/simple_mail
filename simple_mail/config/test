@@ -18,7 +18,7 @@ UseSTARTTLS=Yes
 
 # Username/Password
 AuthUser=ar18.public@gmail.com
-AuthPass={{PASSWORD}}
+AuthPass=@@PASSWORD@@
 AuthMethod=LOGIN
 
 # Email 'From header's can override the default domain?
