@@ -221,16 +221,13 @@ rm -rf "${temp_dir}/${user_name}_email_credentials"
 "${temp_dir}/gpg/gpg/decrypt.sh" "${temp_dir}/secrets/secrets/${user_name}_email_credentials.gpg" "${temp_dir}" "${ar18_sudo_password}"
 declare -A email_paswords
 while IFS= read -r line ;do
-  echo "${line}"
   domain="$(echo "${line}" | cut -d $'\t' -f1)"
   password="$(echo "${line}" | cut -d $'\t' -f2)"
   email_paswords["${domain}"]="${password}"
 done < "${temp_dir}/${user_name}_email_credentials"
 for key in "${!email_paswords[@]}"; do
-  echo "key  : ${key}"
-  echo "value: ${email_paswords[${key}]}"
+  this_break="0"
   for filename in "/home/${user_name}/.config/ar18/simple_mail/"*; do
-    echo "${filename}"
     content="$(cat "${filename}")"
     if echo "${content}" | grep -E "^AuthUser="; then
       . "${filename}"
@@ -239,13 +236,16 @@ for key in "${!email_paswords[@]}"; do
       if [ "${AuthUser}" = "${key}" ]; then
         echo replace
         content="${content/@@PASSWORD@@/${email_paswords[${key}]}}"
-        echo "${content}" > "${filename}"
+        echo "${content}" > "/etc/ssmtp/ssmtp.conf"
+        this_break="1"
+        break
       fi
     fi
   done
+  if [ "${this_break}" = "1" ]; then
+    break 
+  fi
 done
-
-ar18.script.execute_with_sudo cp -f "/home/${user_name}/.config/ar18/simple_mail/${ar18_deployment_target}" "/etc/ssmtp/ssmtp.conf"
 
 ##################################SCRIPT_END###################################
 set +x
