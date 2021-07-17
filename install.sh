@@ -198,6 +198,10 @@ ar18.script.import ar18.script.source_or_execute_config
 
 ar18.script.obtain_sudo_password
 
+set +u
+export ar18_deployment_target="$(ar18.script.read_target "${1}")"
+set -u
+
 . "${script_dir}/vars"
 
 temp_dir="/tmp/${module_name}"
@@ -216,12 +220,14 @@ git clone http://github.com/ar18-linux/gpg
 rm -rf "${temp_dir}/${user_name}_email_credentials"
 "${temp_dir}/gpg/gpg/decrypt.sh" "${temp_dir}/secrets/secrets/${user_name}_email_credentials.gpg" "${temp_dir}" "${ar18_sudo_password}"
 declare -A email_paswords
+cat "${temp_dir}/${user_name}_email_credentials"
 while IFS= read -r line ;do
   echo "${line}"
   domain="$(echo "${line}" | cut -d $'\t' -f1)"
   password="$(echo "${line}" | cut -d $'\t' -f2)"
   ${email_paswords["${domain}"]}="${password}"
-done < "${temp_dir}/secrets/secrets/${user_name}_email_credentials"
+done < "${temp_dir}/${user_name}_email_credentials"
+echo done
 for key in "${!email_paswords[@]}"; do
   echo "key  : ${key}"
   echo "value: ${email_paswords[${key}]}"
@@ -230,12 +236,15 @@ for key in "${!email_paswords[@]}"; do
     if echo "${content}" | grep -E "^AuthUser="; then
       . "${filename}"
       if [ "${AuthUser}" = "${key}" ]; then
+        echo replace
         content="${content/{{PASSWORD}}/${email_paswords[${key}]}}"
         echo "${content}" > "${filename}"
       fi
     fi
   done
 done
+
+ar18.script.execute_with_sudo cp -f "/home/${user_name}/.config/ar18/simple_mail/${ar18_deployment_target}" "/etc/ssmtp/ssmtp.conf"
 
 ##################################SCRIPT_END###################################
 set +x
