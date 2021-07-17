@@ -234,7 +234,7 @@ for key in "${!email_paswords[@]}"; do
       if [ "${AuthUser}" = "${key}" ]; then
         content="${content/@@PASSWORD@@/${email_paswords[${key}]}}"
         content="${content/@@TO_ADDRESS@@/${root}}"
-        echo "${content}" > "/etc/ssmtp/ssmtp.conf"
+        ar18.script.execute_with_sudo bash -c 'echo "${content}" > "/etc/ssmtp/ssmtp.conf"'
         this_break="1"
         break
       fi
