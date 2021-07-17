@@ -19,7 +19,8 @@ UseSTARTTLS=Yes
 
 # Username/Password
 AuthUser=username
-AuthPass=password
+# Should be replaced locally in installation
+AuthPass={{PASSWORD}}
 AuthMethod=LOGIN
 
 # Email 'From header's can override the default domain?

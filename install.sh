@@ -202,33 +202,40 @@ ar18.script.obtain_sudo_password
 
 temp_dir="/tmp/${module_name}"
 
-#ar18.aur.install ssmtp
+ar18.aur.install ssmtp
 
 ar18.script.install "${install_dir}" "${module_name}" "${script_dir}"
+ar18.script.execute_with_sudo sed -i "s^{{USER_NAME}}^${user_name}^g" "${install_dir}/${module_name}/send_template.sh"
 
-set +u
-export ar18_deployment_target="$(ar18.script.read_target "${1}")"
-set -u
-ar18.script.source_or_execute_config "source" "${module_name}" "${ar18_deployment_target}"
-# Create a self-signed certificate
-ar18.script.execute_with_sudo rm -rf "${temp_dir}"
 mkdir -p "${temp_dir}"
-ar18.pacman.install openssl
-rand_str="$(uuidgen)"
-openssl genrsa -des3 -passout pass:"${rand_str}" -out "${temp_dir}/keypair.key" 2048
-ar18.script.execute_with_sudo rm -rf "${cert_dir}/${domain_or_ip}"
-ar18.script.execute_with_sudo mkdir -p "${cert_dir}"
-
-ar18.script.execute_with_sudo openssl rsa -passin pass:"${rand_str}" -in "${temp_dir}/keypair.key" -out "${cert_dir}/${domain_or_ip}.key"
-
-ar18.script.execute_with_sudo chmod +x "${script_dir}/install.tcl"
-# Lots of questions asked!
-ar18.script.execute_with_sudo "${script_dir}/install.tcl" "${cert_dir}" "${domain_or_ip}" \
-  "${country}" "${state}" "${locality}" "${organization}" "${unit}" "${common_name}" "${email}"
-echo "Questions answered"
-ar18.script.execute_with_sudo openssl x509 -req -days 365 -in "${cert_dir}/${domain_or_ip}.csr" -signkey "${cert_dir}/${domain_or_ip}.key" -out "${cert_dir}/${domain_or_ip}.crt"
-
-ar18.script.execute_with_sudo cp -f "/home/${user_name}/.config/ar18/simple_mail/${ar18_deployment_target}" "/etc/ssmtp/ssmtp.conf"
+cd "${temp_dir}"
+rm -rf "${temp_dir}/secrets"
+git clone http://github.com/ar18-linux/secrets
+rm -rf "${temp_dir}/gpg"
+git clone http://github.com/ar18-linux/gpg
+rm -rf "${temp_dir}/${user_name}_email_credentials"
+"${temp_dir}/gpg/gpg/decrypt.sh" "${temp_dir}/secrets/secrets/${user_name}_email_credentials.gpg" "${temp_dir}" "${ar18_sudo_password}"
+declare -A email_paswords
+while IFS= read -r line ;do
+  echo "${line}"
+  domain="$(echo "${line}" | cut -d $'\t' -f1)"
+  password="$(echo "${line}" | cut -d $'\t' -f2)"
+  ${email_paswords["${domain}"]}="${password}"
+done < "${temp_dir}/secrets/secrets/${user_name}_email_credentials"
+for key in "${!email_paswords[@]}"; do
+  echo "key  : ${key}"
+  echo "value: ${email_paswords[${key}]}"
+  for filename in "/home/${user_name}/.config/ar18/simple_mail/"*; do
+    content="$(cat "${filename}")"
+    if echo "${content}" | grep -E "^AuthUser="; then
+      . "${filename}"
+      if [ "${AuthUser}" = "${key}" ]; then
+        content="${content/{{PASSWORD}}/${email_paswords[${key}]}}"
+        echo "${content}" > "${filename}"
+      fi
+    fi
+  done
+done
 
 ##################################SCRIPT_END###################################
 set +x
