@@ -206,7 +206,7 @@ set -u
 
 temp_dir="/tmp/${module_name}"
 
-#ar18.aur.install ssmtp
+ar18.aur.install ssmtp
 
 ar18.script.install "${install_dir}" "${module_name}" "${script_dir}"
 ar18.script.execute_with_sudo sed -i "s^{{USER_NAME}}^${user_name}^g" "${install_dir}/${module_name}/send_template.sh"
