@@ -231,11 +231,9 @@ for key in "${!email_paswords[@]}"; do
     content="$(cat "${filename}")"
     if echo "${content}" | grep -E "^AuthUser="; then
       . "${filename}"
-      echo "f${AuthUser}f"
-      echo "f${key}f"
       if [ "${AuthUser}" = "${key}" ]; then
-        echo replace
         content="${content/@@PASSWORD@@/${email_paswords[${key}]}}"
+        content="${content/@@TO_ADDRESS@@/${root}}"
         echo "${content}" > "/etc/ssmtp/ssmtp.conf"
         this_break="1"
         break

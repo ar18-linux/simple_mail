@@ -2,6 +2,6 @@
 
 template="${1}"
 template_text="$(cat "/home/{{USER_NAME}}/.config/ar18/simple_mail/${template}")"
-template_text=${template_text//{{HOST_NAME}}/${HOSTNAME}}
+template_text=${template_text//@@HOST_NAME@@/${HOSTNAME}}
 
 echo -e "${template_text}" | sendmail -v alexander.remus@googlemail.com

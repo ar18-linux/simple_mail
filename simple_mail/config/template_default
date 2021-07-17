@@ -2,4 +2,4 @@ Subject: Subject
 
 Body
 Replaced values:
-{{HOST_NAME}}
+@@HOST_NAME@@
