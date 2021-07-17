@@ -206,7 +206,7 @@ set -u
 
 temp_dir="/tmp/${module_name}"
 
-ar18.aur.install ssmtp
+#ar18.aur.install ssmtp
 
 ar18.script.install "${install_dir}" "${module_name}" "${script_dir}"
 ar18.script.execute_with_sudo sed -i "s^{{USER_NAME}}^${user_name}^g" "${install_dir}/${module_name}/send_template.sh"
@@ -220,21 +220,22 @@ git clone http://github.com/ar18-linux/gpg
 rm -rf "${temp_dir}/${user_name}_email_credentials"
 "${temp_dir}/gpg/gpg/decrypt.sh" "${temp_dir}/secrets/secrets/${user_name}_email_credentials.gpg" "${temp_dir}" "${ar18_sudo_password}"
 declare -A email_paswords
-cat "${temp_dir}/${user_name}_email_credentials"
 while IFS= read -r line ;do
   echo "${line}"
   domain="$(echo "${line}" | cut -d $'\t' -f1)"
   password="$(echo "${line}" | cut -d $'\t' -f2)"
-  ${email_paswords["${domain}"]}="${password}"
+  email_paswords["${domain}"]="${password}"
 done < "${temp_dir}/${user_name}_email_credentials"
-echo done
 for key in "${!email_paswords[@]}"; do
   echo "key  : ${key}"
   echo "value: ${email_paswords[${key}]}"
   for filename in "/home/${user_name}/.config/ar18/simple_mail/"*; do
+    echo "${filename}"
     content="$(cat "${filename}")"
     if echo "${content}" | grep -E "^AuthUser="; then
       . "${filename}"
+      echo "f${AuthUser}f"
+      echo "f${key}f"
       if [ "${AuthUser}" = "${key}" ]; then
         echo replace
         content="${content/{{PASSWORD}}/${email_paswords[${key}]}}"
